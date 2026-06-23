@@ -40,18 +40,23 @@ struct MiniMaxMeterApp: App {
             PopoverView()
                 .environmentObject(accountStore)
                 .environmentObject(store)
-                .preferredColorScheme(colorScheme)
         } label: {
             MenuBarLabel(store: store, accountStore: accountStore)
         }
         .menuBarExtraStyle(.window)
     }
+}
 
-    private var colorScheme: ColorScheme? {
-        switch appearance {
-        case "light": return .light
-        case "dark":  return .dark
-        default:      return nil   // 跟随系统
+/// 把用户选的外观模式应用到整个 app（影响 MenuBarExtra popover 的 chrome）
+func applyAppearance(_ mode: String) {
+    DispatchQueue.main.async {
+        switch mode {
+        case "light":
+            NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark":
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        default:
+            NSApp.appearance = nil   // nil = 跟随系统
         }
     }
 }

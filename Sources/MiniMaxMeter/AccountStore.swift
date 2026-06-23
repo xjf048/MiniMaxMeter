@@ -14,6 +14,7 @@ final class AccountStore: ObservableObject {
     init() {
         load()
         migrateFromLegacyIfNeeded()
+        refreshExpirationsIfNeeded()
     }
 
     // MARK: - Public API
@@ -102,5 +103,19 @@ final class AccountStore: ObservableObject {
         if addAccount(cookie: legacy, displayName: "默认账户") != nil {
             Keychain.deleteLegacyCookie()
         }
+    }
+
+    /// 启动时检查：如果账户的 cookieExpiresAt 是 nil，从 Keychain 重新算
+    /// 用于老用户（v1.2 之前迁移过来的账户）
+    private func refreshExpirationsIfNeeded() {
+        var changed = false
+        for i in 0..<accounts.count where accounts[i].cookieExpiresAt == nil {
+            if let cookie = Keychain.loadCookie(for: accounts[i].id),
+               let exp = JWT.cookieExpiration(cookie) {
+                accounts[i].cookieExpiresAt = exp
+                changed = true
+            }
+        }
+        if changed { save() }
     }
 }

@@ -53,12 +53,16 @@ struct PopoverView: View {
         .onAppear {
             startTicking()
             if !store.hasCookie { showSettings = true }   // 首次没账户自动展开
+            applyAppearance(appearance)                    // 应用外观
             Task { @MainActor in
                 await Notifier.shared.refreshPermissionStatus()
                 notifPermissionGranted = Notifier.shared.permissionGranted
             }
         }
         .onDisappear { stopTicking() }
+        .onChange(of: appearance) { newValue in
+            applyAppearance(newValue)                       // picker 变化时立即应用
+        }
     }
 
     // MARK: - Header
