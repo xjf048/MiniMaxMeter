@@ -26,6 +26,12 @@ struct PopoverView: View {
                 placeholder
             }
 
+            // 用量趋势 sparkline
+            if !store.dailyUsage.isEmpty {
+                Divider()
+                TrendChart(dailyUsage: store.dailyUsage)
+            }
+
             if let err = store.lastError {
                 Text(err)
                     .font(.caption)

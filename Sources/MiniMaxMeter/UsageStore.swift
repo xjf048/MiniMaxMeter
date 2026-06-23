@@ -5,12 +5,15 @@ import SwiftUI
 final class UsageStore: ObservableObject {
     @Published private(set) var snapshot: UsageSnapshot?
     @Published private(set) var lastError: String?
+    @Published private(set) var dailyUsage: [DailyUsage] = []
     @Published var refreshInterval: TimeInterval = 60
     @Published var enabledThresholds: Set<Int> = [50, 75, 90] { didSet { UserDefaults.standard.set(Array(enabledThresholds), forKey: Self.thresholdsKey) } }
 
     let accountStore: AccountStore
 
     private var fetcher: UsageFetcher?
+    private var summaryFetcher: UsageSummaryFetcher?
+    private var summaryTimer: Timer?
     private var timer: Timer?
     private var lastActiveAccountId: String?
     private var lastUsedPercent: [String: Int] = [:]
@@ -25,9 +28,11 @@ final class UsageStore: ObservableObject {
             self.enabledThresholds = Set(arr)
         }
         start()
+        scheduleSummary()
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 100_000_000)
             await Notifier.shared.requestPermission()
+            await refreshSummary()
             await observeAccountChanges()
         }
     }
@@ -89,25 +94,38 @@ final class UsageStore: ObservableObject {
         let acc = accountStore.addAccount(cookie: cookie, displayName: displayName)
         if acc != nil {
             accountStore.setActive(acc!.id)
-            fetcher = nil   // 重建 fetcher
-            Task { await refresh() }
+            fetcher = nil            // 重建 fetcher
+            summaryFetcher = nil     // 重建 summary fetcher
+            Task {
+                await refresh()
+                await refreshSummary()
+            }
         }
         return acc
     }
 
     func removeAccount(_ id: String) {
         accountStore.removeAccount(id)
-        // 如果删的是活跃账户，切换 fetcher
         if accountStore.activeAccountId != lastActiveAccountId {
             fetcher = nil
-            Task { await refresh() }
+            summaryFetcher = nil
+            dailyUsage = []
+            Task {
+                await refresh()
+                await refreshSummary()
+            }
         }
     }
 
     func switchActiveAccount(_ id: String) {
         accountStore.setActive(id)
         fetcher = nil
-        Task { await refresh() }
+        summaryFetcher = nil
+        dailyUsage = []
+        Task {
+            await refresh()
+            await refreshSummary()
+        }
     }
 
     // MARK: - 刷新
@@ -117,6 +135,27 @@ final class UsageStore: ObservableObject {
         Task { await refresh() }
         timer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
             Task { await self?.refresh() }
+        }
+    }
+
+    /// summary 拉取频率低一点（每 1 小时），因为 daily 数据不需要实时
+    private func scheduleSummary() {
+        summaryTimer?.invalidate()
+        summaryTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            Task { await self?.refreshSummary() }
+        }
+    }
+
+    func refreshSummary() async {
+        guard let cookie = accountStore.activeCookie(), !cookie.isEmpty else { return }
+        if summaryFetcher == nil {
+            summaryFetcher = UsageSummaryFetcher(cookie: cookie)
+        }
+        do {
+            let daily = try await summaryFetcher!.fetch()
+            self.dailyUsage = daily
+        } catch {
+            // 静默失败，不影响主流程
         }
     }
 
@@ -187,7 +226,10 @@ final class UsageStore: ObservableObject {
         while !Task.isCancelled {
             if accountStore.activeAccountId != lastActiveAccountId {
                 fetcher = nil
+                summaryFetcher = nil
+                dailyUsage = []
                 await refresh()
+                await refreshSummary()
             }
             try? await Task.sleep(nanoseconds: 500_000_000)  // 每 0.5s 检查
         }

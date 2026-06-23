@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-23
+
+### ✨ 新增
+
+- **用量趋势 sparkline**（v2.2）：在 popover 显示最近 7/30 天 token 用量趋势
+  - 端点：`https://www.minimaxi.com/backend/account/token_plan/usage_summary`
+  - Swift Charts 画 AreaMark + LineMark，渐变填充
+  - 7 天 / 30 天切换
+  - 1 小时自动拉一次（daily 数据不需要实时）
+  - 显示区间合计 + 单日峰值（自动 B/M/K 格式化）
+
 ## [1.2.0] - 2026-06-23
 
 ### ✨ 新增
