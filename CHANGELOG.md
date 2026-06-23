@@ -1,0 +1,28 @@
+# Changelog
+
+所有值得注意的变更都会记录在这里。版本遵循 [Semantic Versioning](https://semver.org/)。
+
+## [Unreleased]
+
+## [1.0.0] - 2026-06-23
+
+### ✨ 新增
+- 菜单栏常驻显示 5h 限额 + 周限额已用百分比
+- 点击菜单栏弹出小卡片（5h / 周进度条 + 倒计时）
+- Popover 内嵌设置区（填 Cookie / 选刷新频率 / 清除）
+- Cookie 存到 macOS Keychain
+- 接口失败自动降级到本地缓存
+- 401/403 自动清理 Keychain
+- 颜色状态：0–30% 绿 / 30–70% 橙 / 70%+ 红
+- 倒计时实时刷新（每秒）
+
+### 🔧 工具
+- `install-安装.command` — 一键安装 + 桌面替身
+- `start-启动.command` — 命令行启动
+- `uninstall-卸载.command` — 卸载清理
+- GitHub Actions 自动 build 验证
+
+### 📚 文档
+- README 中英双语
+- 项目总结
+- CONTRIBUTING / Issue 模板

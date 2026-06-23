@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+*.swp
+*~
+
+# Swift / SwiftPM
+.build/
+.swiftpm/
+*.xcodeproj/
+*.xcworkspace/
+Package.resolved
+
+# 构建产物
+MiniMaxMeter.app/
+
+# 日志
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# 用户私有文件
+*.local
+.env
+.env.local
+
+# 截图临时文件（用户从 Claude 上传对话用的）
+.claude-uploads/
